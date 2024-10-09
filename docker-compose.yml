@@ -1,0 +1,46 @@
+
+
+services:
+  symfony:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: symfony
+    working_dir: /appointments/backend/symfony  # Caminho corrigido (letra minúscula)
+    volumes:
+      - ./symfony:/appointments/backend/symfony  # Caminho corrigido (letra minúscula)
+    ports:
+      - '8000:8000'
+    command: sh -c "composer install --no-interaction && php -S 0.0.0.0:8000 -t public"
+    environment:
+      DATABASE_URL: mysql://root:databaseadmin@mariadb:3306/symfony
+    depends_on:
+      - mariadb
+    networks:
+      shared_network:
+        ipv4_address: 172.30.0.3  # IP fixo para o Symfony
+
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: databaseadmin
+      MYSQL_DATABASE: symfony
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --password=databaseadmin"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+    networks:
+      shared_network:
+        ipv4_address: 172.30.0.4  # IP fixo para o MariaDB
+
+volumes:
+  mariadb_data:
+
+networks:
+  shared_network:
+    external: true  # Rede externa compartilhada com o outro docker-compose
